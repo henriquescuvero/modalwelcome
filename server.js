@@ -7,15 +7,27 @@ const { Shopify } = require('@shopify/shopify-api');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Default scopes if not provided in environment
+const DEFAULT_SCOPES = ['write_script_tags', 'read_themes'];
+
 // Shopify configuration
 const shopify = new Shopify({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecret: process.env.SHOPIFY_API_SECRET,
-  scopes: process.env.SCOPES.split(','),
-  hostName: process.env.HOST,
+  scopes: process.env.SCOPES ? process.env.SCOPES.split(',') : DEFAULT_SCOPES,
+  hostName: process.env.HOST?.replace(/https?:\/\//, ''),
   apiVersion: '2023-10',
   isEmbeddedApp: true
 });
+
+// Validate required environment variables
+const requiredEnvVars = ['SHOPIFY_API_KEY', 'SHOPIFY_API_SECRET', 'HOST'];
+const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
+
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars);
+  process.exit(1);
+}
 
 // Database configuration
 const pool = new Pool({
