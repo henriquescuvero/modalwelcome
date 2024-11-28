@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração do Modal de Boas-vindas</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f6f6f7;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a1a1a;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c2c2c;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        button {
+            background-color: #008060;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        button:hover {
+            background-color: #006e52;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Configuração do Modal de Boas-vindas</h1>
+        <form id="modalForm">
+            <div class="form-group">
+                <label for="title">Título do Modal</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="content">Conteúdo do Modal</label>
+                <textarea id="content" name="content" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="buttonText">Texto do Botão</label>
+                <input type="text" id="buttonText" name="buttonText" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="active">Modal Ativo</label>
+                <label class="switch">
+                    <input type="checkbox" id="active" name="active" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <button type="submit">Salvar Configurações</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('modalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                shopDomain: new URL(window.location.href).searchParams.get('shop'),
+                title: document.getElementById('title').value,
+                content: document.getElementById('content').value,
+                buttonText: document.getElementById('buttonText').value,
+                active: document.getElementById('active').checked
+            };
+
+            try {
+                const response = await fetch('/api/modal-settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    alert('Configurações salvas com sucesso!');
+                } else {
+                    throw new Error('Erro ao salvar configurações');
+                }
+            } catch (error) {
+                alert('Erro ao salvar configurações: ' + error.message);
+            }
+        });
+
+        // Carregar configurações existentes
+        async function loadSettings() {
+            const shopDomain = new URL(window.location.href).searchParams.get('shop');
+            try {
+                const response = await fetch(`/api/modal-settings/${shopDomain}`);
+                const settings = await response.json();
+                
+                if (settings) {
+                    document.getElementById('title').value = settings.title || '';
+                    document.getElementById('content').value = settings.content || '';
+                    document.getElementById('buttonText').value = settings.button_text || '';
+                    document.getElementById('active').checked = settings.active;
+                }
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+            }
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>

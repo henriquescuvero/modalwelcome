@@ -1,0 +1,19 @@
+name = "Welcome Modal App"
+client_id = "" # Será preenchido com sua Shopify API Key
+application_url = "https://shopify.moxxy.com.br"
+embedded = true
+
+[access_scopes]
+# Defina os escopos necessários
+scopes = "write_script_tags,read_themes"
+
+[auth]
+redirect_urls = [
+    "https://shopify.moxxy.com.br/auth/callback"
+]
+
+[webhooks]
+api_version = "2023-10"
+
+[pos]
+embedded = false
