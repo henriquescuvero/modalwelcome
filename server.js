@@ -27,6 +27,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
+// Routes
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/admin/index.html');
+});
+
 // Auth endpoints
 app.get('/auth', async (req, res) => {
   const shop = req.query.shop;
@@ -34,22 +39,26 @@ app.get('/auth', async (req, res) => {
     return res.status(400).send('Missing shop parameter');
   }
 
-  const authUrl = await shopify.auth.buildAuthUrl({
+  const authUrl = await shopify.auth.beginAuth(
+    req,
+    res,
     shop,
-    redirectUri: `https://${process.env.HOST}/auth/callback`,
-    isOnline: false,
-  });
+    '/auth/callback',
+    false
+  );
   
   res.redirect(authUrl);
 });
 
 app.get('/auth/callback', async (req, res) => {
   try {
-    const { shop, code } = req.query;
-    const accessToken = await shopify.auth.getAccessToken(shop, code);
+    const session = await shopify.auth.validateAuthCallback(
+      req,
+      res,
+      req.query
+    );
     
-    // Store access token securely if needed
-    res.redirect(`/admin?shop=${shop}`);
+    res.redirect(`/admin?shop=${session.shop}`);
   } catch (error) {
     console.error('Error during auth callback:', error);
     res.status(500).send('Error during authentication');
