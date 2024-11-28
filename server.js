@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
-const { Shopify } = require('@shopify/shopify-api');
+const { shopifyApi, LATEST_API_VERSION } = require('@shopify/shopify-api');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -11,12 +11,12 @@ const port = process.env.PORT || 3000;
 const DEFAULT_SCOPES = ['write_script_tags', 'read_themes'];
 
 // Shopify configuration
-const shopify = new Shopify({
+const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY,
-  apiSecret: process.env.SHOPIFY_API_SECRET,
+  apiSecretKey: process.env.SHOPIFY_API_SECRET,
   scopes: process.env.SCOPES ? process.env.SCOPES.split(',') : DEFAULT_SCOPES,
   hostName: process.env.HOST?.replace(/https?:\/\//, ''),
-  apiVersion: '2023-10',
+  apiVersion: LATEST_API_VERSION,
   isEmbeddedApp: true
 });
 
@@ -51,24 +51,27 @@ app.get('/auth', async (req, res) => {
     return res.status(400).send('Missing shop parameter');
   }
 
-  const authUrl = await shopify.auth.beginAuth(
-    req,
-    res,
-    shop,
-    '/auth/callback',
-    false
-  );
-  
-  res.redirect(authUrl);
+  try {
+    const authUrl = await shopify.auth.begin({
+      shop,
+      callbackPath: '/auth/callback',
+      isOnline: false,
+    });
+    
+    res.redirect(authUrl);
+  } catch (error) {
+    console.error('Error during auth:', error);
+    res.status(500).send('Error during authentication');
+  }
 });
 
 app.get('/auth/callback', async (req, res) => {
   try {
-    const session = await shopify.auth.validateAuthCallback(
-      req,
-      res,
-      req.query
-    );
+    const { shop, code } = req.query;
+    const session = await shopify.auth.callback({
+      rawRequest: req,
+      rawResponse: res
+    });
     
     res.redirect(`/admin?shop=${session.shop}`);
   } catch (error) {
